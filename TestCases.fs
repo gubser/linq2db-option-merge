@@ -1,5 +1,7 @@
 ﻿module OptionMergeTest
 
+open System
+
 open NUnit.Framework
 open LinqToDB
 open LinqToDB.Mapping
@@ -13,7 +15,7 @@ type MyOptionalInt = {
     [<Column("id"); PrimaryKey; Identity>]
     Id: int
 
-    [<Column("value")>]
+    [<Column("value", DataType=DataType.Int32)>]
     Value: int option
 }
 
@@ -99,6 +101,17 @@ let ``Can merge some and none`` () =
     ]
 
     table.Merge().Using(entities).OnTargetKey().InsertWhenNotMatched().UpdateWhenMatched().Merge() |> shouldEqual 2
+
+
+[<Test>]
+let ``Can merge empty`` () =
+    use conn = new DataConnection(dataOptions)
+    let table = conn.GetTable<MyOptionalInt>()
+    table.Truncate() |> ignore<int>
+
+    let entities: MyOptionalInt list = []
+
+    table.Merge().Using(entities).OnTargetKey().InsertWhenNotMatched().UpdateWhenMatched().Merge() |> shouldEqual 0
 
 
 [<Test>]

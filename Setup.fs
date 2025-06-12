@@ -9,8 +9,8 @@ open LinqToDB.Expressions
 open LinqToDB.Data
 open LinqToDB.DataProvider.PostgreSQL
 open LinqToDB.FSharp
-open Testcontainers.PostgreSql
 open Npgsql
+open LinqToDB.Common
 
 type ReferenceTypeOptionInfoProvider<'T when 'T :> obj and 'T: null and 'T : not struct>() =
     interface IGenericInfoProvider with
@@ -31,7 +31,9 @@ type ValueTypeOptionInfoProvider<'T when 'T :> ValueType and 'T: struct and 'T: 
             mappingSchema.SetConvertExpression<Nullable<'T>, 'T option>(Option.ofNullable)
             |> ignore
 
-            mappingSchema.SetConverter<'T option, DataParameter>(fun d -> DataParameter(Value = Option.toNullable d))
+            mappingSchema.SetConverter<'T option, DataParameter>(fun d ->
+                DataParameter(Value = Option.toNullable d, DbDataType = DbDataType(typeof<'T>))
+            )
             |> ignore
 
 type OptionInfoProvider<'T>() =
@@ -48,7 +50,6 @@ type OptionInfoProvider<'T>() =
                     Activator.CreateInstance(providerType) :?> IGenericInfoProvider
 
             provider.SetInfo(mappingSchema)
-
 
 let createLoggerFactory () =
     LoggerFactory.Create(fun builder -> builder.AddConsole() |> ignore)
